@@ -3,6 +3,12 @@ from torch.utils.data import Dataset
 import pathlib
 import pandas as pd
 import torchaudio
+import torch
+from src.config import TaskConfig
+from src.augs import AugsCreation
+from src.sampler import get_sampler, Collator
+from torch.utils.data import DataLoader
+from src.melspec import LogMelspec
 
 
 class SpeechCommandDataset(Dataset):
@@ -61,3 +67,44 @@ class SpeechCommandDataset(Dataset):
 
     def __len__(self):
         return len(self.csv)
+
+
+def get_dataloader(train: bool, valid: bool, prefix: str = ''):
+    dataset = SpeechCommandDataset(
+        path2dir=prefix + 'speech_commands', keywords=TaskConfig.keyword
+    )
+
+    indexes = torch.randperm(len(dataset))
+    train_indexes = indexes[:int(len(dataset) * 0.8)]
+    val_indexes = indexes[int(len(dataset) * 0.8):]
+
+    train_df = dataset.csv.iloc[train_indexes].reset_index(drop=True)
+    val_df = dataset.csv.iloc[val_indexes].reset_index(drop=True)
+
+    train_set = SpeechCommandDataset(csv=train_df, transform=AugsCreation(prefix + 'speech_commands'))
+    val_set = SpeechCommandDataset(csv=val_df)
+
+    train_sampler = get_sampler(train_set.csv['label'].values)
+
+    # Here we are obliged to use shuffle=False because of our sampler with randomness inside.
+
+    train_loader = DataLoader(train_set, batch_size=TaskConfig.batch_size,
+                              shuffle=False, collate_fn=Collator(),
+                              sampler=train_sampler,
+                              num_workers=2, pin_memory=True)
+
+    val_loader = DataLoader(val_set, batch_size=TaskConfig.batch_size,
+                            shuffle=False, collate_fn=Collator(),
+                            num_workers=2, pin_memory=True)
+
+    melspec_train = LogMelspec(is_train=True, config=TaskConfig)
+    melspec_val = LogMelspec(is_train=False, config=TaskConfig)
+
+    if train:
+        if valid:
+            return train_loader, melspec_train, val_loader, melspec_val
+        else:
+            return train_loader, melspec_train
+    else:
+        if valid:
+            return val_loader, melspec_val

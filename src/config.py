@@ -21,3 +21,7 @@ class TaskConfig:
     sample_rate: int = 16000
     device: torch.device = torch.device(
         'cuda:0' if torch.cuda.is_available() else 'cpu')
+
+
+def basic_config():
+    return TaskConfig()

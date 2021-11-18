@@ -2,6 +2,7 @@ from tqdm import tqdm
 import torch
 from src.quality import count_FA_FR, get_au_fa_fr
 import torch.nn.functional as F
+from src.streaming import Streaming
 
 
 def train_epoch(model, opt, loader, log_melspec, device):
@@ -25,14 +26,16 @@ def train_epoch(model, opt, loader, log_melspec, device):
 
         # logging
         argmax_probs = torch.argmax(probs, dim=-1)
-        FA, FR = count_FA_FR(argmax_probs, labels)
         acc = torch.sum(argmax_probs == labels) / torch.numel(argmax_probs)
 
     return acc
 
+
 @torch.no_grad()
-def validation(model, loader, log_melspec, device):
+def validation(model, loader, log_melspec, device, stream=False, max_window=None):
     model.eval()
+    if stream:
+        model = Streaming(model, max_window)
 
     val_losses, accs, FAs, FRs = [], [], [], []
     all_probs, all_labels = [], []
@@ -41,8 +44,8 @@ def validation(model, loader, log_melspec, device):
         batch = log_melspec(batch)
 
         output = model(batch)
-        # we need probabilities so we use softmax & CE separately
         probs = F.softmax(output, dim=-1)
+
         loss = F.cross_entropy(output, labels)
 
         # logging

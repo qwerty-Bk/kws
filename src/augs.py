@@ -4,18 +4,20 @@ import torchaudio
 
 class AugsCreation:
 
-    def __init__(self):
+    def __init__(self, path):
+        path += '/_background_noise_'
         self.background_noises = [
-            'speech_commands/_background_noise_/white_noise.wav',
-            'speech_commands/_background_noise_/dude_miaowing.wav',
-            'speech_commands/_background_noise_/doing_the_dishes.wav',
-            'speech_commands/_background_noise_/exercise_bike.wav',
-            'speech_commands/_background_noise_/pink_noise.wav',
-            'speech_commands/_background_noise_/running_tap.wav'
+            path + '/white_noise.wav',
+            path + '/dude_miaowing.wav',
+            path + '/doing_the_dishes.wav',
+            path + '/exercise_bike.wav',
+            path + '/pink_noise.wav',
+            path + '/running_tap.wav'
         ]
 
-        from os import listdir
-        from os.path import isfile, join
+        # from os import listdir
+        # l_files = listdir('../')
+        # print(l_files)
 
         self.noises = [
             torchaudio.load(p)[0].squeeze()
