@@ -21,7 +21,7 @@ def distill_train_epoch(teacher, student, opt, loader, log_melspec,
         probs = F.softmax(student_logits, dim=-1)
 
         loss_on_labels = F.cross_entropy(student_logits, labels)
-        loss_on_teacher = F.cross_entropy(student_logits, teacher_labels)
+        loss_on_teacher = F.kl_div(F.log_softmax(student_logits / temp, dim=-1), teacher_labels / temp, reduction="batchmean")
 
         loss = loss_on_teacher * alpha * temp ** 2 + (1 - alpha) * loss_on_labels
 
@@ -35,4 +35,3 @@ def distill_train_epoch(teacher, student, opt, loader, log_melspec,
         acc = torch.sum(argmax_probs == labels) / torch.numel(argmax_probs)
 
     return acc
-
