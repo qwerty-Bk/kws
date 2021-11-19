@@ -49,13 +49,15 @@ class CRNN(nn.Module):
         self.attention = Attention(config.hidden_size)
         self.classifier = nn.Linear(config.hidden_size, config.num_classes)
 
-    def forward(self, input, hidden=None, return_hidden=False):
+    def forward(self, input, hidden=None, return_hidden=False, return_attention=False):
         input = input.unsqueeze(dim=1)
         conv_output = self.conv(input).transpose(-1, -2)
         gru_output, hidden = self.gru(conv_output, hidden)
         contex_vector = self.attention(gru_output)
         output = self.classifier(contex_vector)
+        ret = [output]
         if return_hidden:
-            return output, hidden
-        else:
-            return output
+            ret.append(hidden)
+        if return_attention:
+            ret.append(contex_vector)
+        return *ret,

@@ -1,5 +1,7 @@
 import numpy as np
 import time
+from thop import profile
+from src.dataset import get_dataloader
 
 
 class Timer:
@@ -29,3 +31,15 @@ def count_pars(model):
     model_parameters = filter(lambda p: p.requires_grad, model.parameters())
     params = sum([np.prod(p.size()) for p in model_parameters])
     return params
+
+
+def count_mac(model, config):
+    element = None
+
+    val_loader, melspec_val = get_dataloader(False, True)
+
+    for batch, labels in val_loader:
+        batch, labels = batch.to(config.device), labels.to(config.device)
+        element = melspec_val(batch)
+
+    return profile(model, (element, ))
