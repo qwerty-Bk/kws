@@ -74,7 +74,7 @@ def get_dataloader(train: bool, valid: bool, prefix: str = ''):
         path2dir=prefix + 'speech_commands', keywords=TaskConfig.keyword
     )
 
-    torch.manual_seed(1564)
+    torch.manual_seed(3407)
     indexes = torch.randperm(len(dataset))
     train_indexes = indexes[:int(len(dataset) * 0.8)]
     val_indexes = indexes[int(len(dataset) * 0.8):]
