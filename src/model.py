@@ -14,9 +14,11 @@ class Attention(nn.Module):
             nn.Linear(hidden_size, 1)
         )
 
-    def forward(self, input):
+    def forward(self, input, return_alpha=False):
         energy = self.energy(input)
         alpha = torch.softmax(energy, dim=-2)
+        if return_alpha:
+            return (input * alpha).sum(dim=-2), alpha
         return (input * alpha).sum(dim=-2)
 
 
@@ -53,13 +55,15 @@ class CRNN(nn.Module):
         input = input.unsqueeze(dim=1)
         conv_output = self.conv(input).transpose(-1, -2)
         gru_output, hidden = self.gru(conv_output, hidden)
-        contex_vector = self.attention(gru_output)
+        contex_vector = self.attention(gru_output, return_attention)
+        if return_attention:
+            contex_vector, attention_alpha = contex_vector
         output = self.classifier(contex_vector)
         ret = [output]
         if return_hidden:
             ret.append(hidden)
         if return_attention:
-            ret.append(contex_vector)
+            ret.append(attention_alpha)
         if len(ret) == 1:
             return ret[0]
         return ret
