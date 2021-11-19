@@ -60,4 +60,6 @@ class CRNN(nn.Module):
             ret.append(hidden)
         if return_attention:
             ret.append(contex_vector)
-        return *tuple(ret),
+        if len(ret) == 1:
+            return ret[0]
+        return ret
